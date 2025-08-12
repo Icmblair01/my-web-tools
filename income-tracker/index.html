@@ -1,1 +1,356 @@
+<!DOCTYPE html>
 
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Income Tracker • CRM Style</title>
+<style>
+  :root{
+    --bg:#0b0b0f;--panel:#12121a;--muted:#2a2a38;--ink:#eaeaf2;--accent:#9b87f5;--accent-2:#4cc9f0;--good:#40c463;--bad:#ff6b6b;
+    --ring:0 0 0 2px rgba(155,135,245,.4);
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    background:radial-gradient(1200px 800px at 80% -10%,rgba(76,201,240,.06),transparent),
+               radial-gradient(1200px 800px at -20% 120%,rgba(155,135,245,.08),transparent),var(--bg);
+    color:var(--ink);
+    font:15px/1.5 ui-sans-serif,system-ui,Segoe UI,Roboto,Inter,Helvetica,Apple Color Emoji,Segoe UI Emoji;
+  }
+  .wrap{max-width:1100px;margin:32px auto;padding:0 16px}
+  header{display:flex;gap:16px;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap}
+  h1{font-size:22px;font-weight:700;margin:0;letter-spacing:.3px}
+  .controls{display:flex;flex-wrap:wrap;gap:8px}
+  button,.btn{appearance:none;border:1px solid var(--muted);background:linear-gradient(180deg,#1a1a26,#14141e);color:var(--ink);
+    padding:8px 12px;border-radius:12px;cursor:pointer;transition:.2s;display:inline-flex;gap:8px;align-items:center}
+  button:hover{box-shadow:var(--ring);border-color:#3b3b52}
+  .pill{border-radius:999px;padding:6px 10px;font-size:12px;border:1px solid var(--muted);background:#12121a}
+
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:14px 0 22px}
+.card{background:linear-gradient(180deg,#141420,#11111a);border:1px solid var(–muted);border-radius:16px;padding:14px}
+.card h3{margin:0 0 8px;font-size:12px;font-weight:600;color:#c8c8e0;letter-spacing:.12em;text-transform:uppercase}
+.card .big{font-size:22px;font-weight:700}
+
+.panel{background:linear-gradient(180deg,#13131d,#101019);border:1px solid var(–muted);border-radius:18px;padding:14px}
+/* Desktop grid (NO Notes column): Date | Client | Items | Cost | Sale | Profit | X */
+.row{display:grid;grid-template-columns:140px 180px minmax(220px,1fr) 110px 120px 120px 36px;gap:16px;align-items:start}
+.row.head{color:#c8c8e0;font-size:12px;text-transform:uppercase;letter-spacing:.12em}
+.row + .row{margin-top:8px}
+
+/* Column separators before money columns for clearer alignment */
+.row > div:nth-child(4),
+.row.head > div:nth-child(4),
+.row > div:nth-child(5),
+.row.head > div:nth-child(5),
+.row > div:nth-child(6),
+.row.head > div:nth-child(6){
+border-left:1px solid #26263a;
+padding-left:12px;
+}
+
+input,textarea{width:100%;padding:8px 10px;border-radius:10px;border:1px solid #2b2b3a;background:#0f0f16;color:var(–ink);color:#eaeaf2}
+.items{display:flex;flex-direction:column;gap:8px;min-width:0}
+.item{display:grid;grid-template-columns:minmax(120px,1fr) 64px;gap:8px}
+.item.invalid input{border-color:var(–bad)}
+
+.footer{display:flex;justify-content:space-between;align-items:center;margin-top:14px}
+.mini{font-size:12px;color:#a9a9c8}
+.catalog{margin-top:22px}
+table{width:100%;border-collapse:collapse}
+th,td{border-bottom:1px solid #26263a;padding:8px 6px;text-align:left}
+th{color:#c8c8e0;font-size:12px;text-transform:uppercase;letter-spacing:.12em}
+
+.weekbar{display:flex;gap:8px;align-items:center;margin-top:-6px;flex-wrap:wrap}
+.weeklabel{padding:6px 10px;border:1px solid var(–muted);border-radius:999px;background:#12121a;font-size:12px}
+
+[data-hidden=“true”]{display:none !important}
+.deploy{opacity:.7;margin-top:32px;border-top:1px solid #26263a;padding-top:10px;font-size:12px;color:#a9a9c8;text-align:right}
+
+@media (max-width:980px){
+.row{grid-template-columns:100px 1fr;grid-auto-rows:auto}
+.row.head{display:none}
+.row > *:nth-child(n+3){grid-column:1/-1}
+.cards{grid-template-columns:1fr}
+}
+</style>
+
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Income Tracker <span class="pill">CRM Style</span></h1>
+      <div class="controls">
+        <button id="addOrder">+ Add Order</button>
+        <input id="fileImport" type="file" accept="application/json" hidden>
+        <button id="importBtn">Import JSON</button>
+        <button id="exportBtn">Export JSON</button>
+        <button id="clearBtn">Clear All</button>
+      </div>
+      <div class="weekbar">
+        <button id="prevWeek">◀︎</button>
+        <span class="weeklabel" id="weekLabel">Week</span>
+        <button id="nextWeek">▶︎</button>
+        <button id="thisWeek">This Week</button>
+      </div>
+    </header>
+
+<section class="cards">
+  <div class="card"><h3>Gross Sales (Week)</h3><div class="big" id="gross">$0</div></div>
+  <div class="card"><h3>Total Cost (Week)</h3><div class="big" id="cost">$0</div></div>
+  <div class="card"><h3>Net Profit (Week)</h3><div class="big" id="profit">$0</div></div>
+</section>
+
+<div class="panel" id="ordersPanel">
+  <div class="row head">
+    <div>Date</div><div>Client</div><div>Items</div><div>Cost</div><div>Sale Price</div><div>Profit</div><div></div>
+  </div>
+  <div id="orders"></div>
+  <div class="footer"><span class="mini">Tip: product codes use a fixed price sheet. Start typing to auto-complete. Quantities multiply cost/price automatically.</span>
+    <span class="mini">Price sheet <samp>Manage → script</samp></span>
+  </div>
+</div>
+
+<details class="catalog">
+  <summary class="btn">View Product Price Sheet</summary>
+  <table id="catalogTable"></table>
+</details>
+
+<div class="deploy">Deployment: v1.2.4</div>
+
+  </div>
+
+  <!-- Templates -->
+
+  <template id="orderRowTmpl">
+    <div class="row order">
+      <div><input type="date" class="o-date"></div>
+      <div><input type="text" class="o-client" placeholder="Client"></div>
+      <div>
+        <div class="items"></div>
+        <button class="addItem" style="margin-top:8px">+ Add Item</button>
+      </div>
+      <div><input class="o-cost" type="text" inputmode="numeric" readonly></div>
+      <div><input class="o-price" type="text" inputmode="numeric" readonly></div>
+      <div><input class="o-profit" type="text" inputmode="numeric" readonly></div>
+      <div><button class="remove">✕</button></div>
+    </div>
+  </template>
+
+  <template id="itemTmpl">
+    <div class="item">
+      <input list="codes" class="i-code" placeholder="Code" maxlength="8">
+      <input type="number" class="i-qty" min="1" value="1">
+    </div>
+  </template>
+
+<datalist id="codes"></datalist>
+
+<noscript style="color:#ffb4b4;padding:8px 16px;display:block">JavaScript is disabled; the UI will render but totals won’t update.</noscript>
+
+  <script>
+  window.addEventListener('DOMContentLoaded', () => {
+    try {
+      // ===== Price sheet =====
+      const CATALOG = {
+        "FLW3.5":{cost:10, price:35},
+        "FLW7":  {cost:20, price:60},
+        "FLW14": {cost:40, price:110},
+        "FLW28": {cost:80, price:180},
+        "SHK14": {cost:10, price:40},
+        "SHK28": {cost:20, price:70},
+        "PRE":   {cost:2,  price:10},
+        "CRT":   {cost:10, price:30},
+        "DSP":   {cost:16, price:50},
+        "LR3.5": {cost:20, price:120},
+        "EDBD":  {cost:5,  price:15},
+        "EDBLR": {cost:8,  price:20}
+      };
+
+      const codesDL = document.getElementById('codes');
+      const table = document.getElementById('catalogTable');
+      function buildCatalog(){
+        codesDL.innerHTML='';
+        const rows = [['Item','Cost','Price'], ...Object.entries(CATALOG).map(([k,v])=>[k, `$${v.cost}`, `$${v.price}`])];
+        table.innerHTML = `<thead><tr>${rows[0].map(h=>`<th>${h}</th>`).join('')}</tr></thead>`+
+                          `<tbody>${rows.slice(1).map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join('')}</tr>`).join('')}</tbody>`;
+        Object.keys(CATALOG).forEach(code=>{
+          const opt = document.createElement('option'); opt.value = code; codesDL.appendChild(opt);
+        });
+      }
+
+      const ordersEl = document.getElementById('orders');
+      const orderRowTmpl = document.getElementById('orderRowTmpl');
+      const itemTmpl = document.getElementById('itemTmpl');
+
+      function fmt(n){return `$${(Math.round(n*100)/100).toLocaleString()}`}
+
+      function addOrder(data){
+        const node = orderRowTmpl.content.firstElementChild.cloneNode(true);
+        const date = node.querySelector('.o-date');
+        const client = node.querySelector('.o-client');
+        const items = node.querySelector('.items');
+
+        node.querySelector('.addItem').onclick = ()=> addItem(items, {});
+        node.querySelector('.remove').onclick = ()=>{ node.remove(); recalcAll(); save(); filterByWeek(currentWeekStart); };
+
+        if(data){
+          date.value   = data.date||'';
+          client.value = data.client||'';
+          (data.items||[]).forEach(it=> addItem(items, it));
+        }else{
+          const d = new Date(currentWeekStart); d.setDate(d.getDate()+Math.min(6, new Date().getDay()));
+          date.value = toISODate(d);
+          addItem(items, {});
+        }
+
+        node.addEventListener('input', ()=>{ recalcOrder(node); save(); filterByWeek(currentWeekStart); }, true);
+        ordersEl.prepend(node);
+        recalcOrder(node); save();
+      }
+
+      function addItem(container, it){
+        const n = itemTmpl.content.firstElementChild.cloneNode(true);
+        const code = n.querySelector('.i-code');
+        const qty  = n.querySelector('.i-qty');
+        code.value = it.code||''; qty.value = it.qty||1;
+        const onChange = ()=>{ recalcItem(n); recalcOrder(container.closest('.order')); save(); };
+        code.addEventListener('input', onChange); qty.addEventListener('input', onChange);
+        container.appendChild(n);
+        recalcItem(n);
+      }
+
+      function recalcItem(itemNode){
+        const code = itemNode.querySelector('.i-code').value.trim().toUpperCase();
+        const qty  = Math.max(1, parseInt(itemNode.querySelector('.i-qty').value||'1',10));
+        const row  = CATALOG[code];
+        itemNode.classList.toggle('invalid', !row && code);
+        let meta = {cost:0, price:0};
+        if(row){ meta.cost = row.cost*qty; meta.price = row.price*qty; }
+        itemNode.dataset.cost = meta.cost; itemNode.dataset.price = meta.price;
+      }
+
+      function recalcOrder(orderNode){
+        const items  = [...orderNode.querySelectorAll('.item')];
+        const cost   = items.reduce((a,n)=> a + (+n.dataset.cost||0),0);
+        const price  = items.reduce((a,n)=> a + (+n.dataset.price||0),0);
+        const profit = price - cost;
+        orderNode.querySelector('.o-cost').value   = fmt(cost);
+        orderNode.querySelector('.o-price').value  = fmt(price);
+        orderNode.querySelector('.o-profit').value = fmt(profit);
+        recalcTotals();
+      }
+
+      function recalcAll(){ document.querySelectorAll('.order').forEach(recalcOrder); }
+      function recalcTotals(){
+        const orders = [...document.querySelectorAll('.order')].filter(o=>o.dataset.hidden!=='true');
+        const gross = orders.reduce((a,o)=> a + parseFloat(o.querySelector('.o-price').value.replace(/[$,]/g,''))||0, 0);
+        const cost  = orders.reduce((a,o)=> a + parseFloat(o.querySelector('.o-cost').value.replace(/[$,]/g,''))||0, 0);
+        document.getElementById('gross').textContent = fmt(gross);
+        document.getElementById('cost').textContent  = fmt(cost);
+        document.getElementById('profit').textContent= fmt(gross - cost);
+      }
+
+      // Week filtering (Sun→Sat)
+      function weekStartOf(d){ const x=new Date(d); x.setHours(0,0,0,0); x.setDate(x.getDate()-x.getDay()); return x; }
+      function toISODate(d){ const x=new Date(d); x.setHours(0,0,0,0); return x.toISOString().slice(0,10); }
+      function humanWeekLabel(start){ const s=new Date(start); const e=new Date(start); e.setDate(s.getDate()+6);
+        const sTxt = s.toLocaleDateString(undefined,{month:'short',day:'numeric'});
+        const eTxt = e.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});
+        return `${sTxt} – ${eTxt}`; }
+
+      let currentWeekStart = weekStartOf(new Date());
+      function filterByWeek(weekStart){
+        currentWeekStart = weekStartOf(weekStart);
+        document.getElementById('weekLabel').textContent =
+          `Week of ${currentWeekStart.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'})} (${humanWeekLabel(currentWeekStart)})`;
+        const start = new Date(currentWeekStart);
+        const end   = new Date(currentWeekStart); end.setDate(end.getDate()+6);
+        document.querySelectorAll('.order').forEach(row=>{
+          const d = row.querySelector('.o-date').value;
+          let inRange = false;
+          if(d){ const dt=new Date(d); dt.setHours(0,0,0,0); inRange = (dt>=start && dt<=end); }
+          row.dataset.hidden = inRange ? 'false' : 'true';
+        });
+        recalcTotals();
+      }
+
+      document.getElementById('prevWeek').onclick = ()=>{ const s=new Date(currentWeekStart); s.setDate(s.getDate()-7); filterByWeek(s); };
+      document.getElementById('nextWeek').onclick = ()=>{ const s=new Date(currentWeekStart); s.setDate(s.getDate()+7); filterByWeek(s); };
+      document.getElementById('thisWeek').onclick = ()=> filterByWeek(new Date());
+
+      // Persistence + Import/Export
+      const KEY = 'income-tracker-v1-no-notes';
+      function serialize(){
+        return [...document.querySelectorAll('.order')].map(o=>({
+          date:o.querySelector('.o-date').value,
+          client:o.querySelector('.o-client').value,
+          items:[...o.querySelectorAll('.item')].map(i=>({
+            code:i.querySelector('.i-code').value.trim().toUpperCase(),
+            qty:parseInt(i.querySelector('.i-qty').value||'1',10)
+          }))
+        }));
+      }
+      function save(){ localStorage.setItem(KEY, JSON.stringify(serialize())); }
+      function load(){
+        const raw = localStorage.getItem(KEY);
+        if(!raw){ addOrder(); return; }
+        try{ JSON.parse(raw).forEach(addOrder); }
+        catch{ addOrder(); }
+      }
+
+      // FIXED: Add Order button click handler
+      document.getElementById('addOrder').onclick = () => {
+        addOrder();
+        filterByWeek(currentWeekStart);
+      };
+
+      // Clear All button functionality
+      document.getElementById('clearBtn').onclick = () => {
+        if(confirm('Are you sure you want to clear all orders?')){
+          ordersEl.innerHTML = '';
+          localStorage.removeItem(KEY);
+          recalcTotals();
+          addOrder(); // Add one empty order
+        }
+      };
+
+      document.getElementById('exportBtn').onclick = ()=>{
+        const blob = new Blob([JSON.stringify({orders:serialize(), catalog:CATALOG},null,2)], {type:'application/json'});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+        a.download = `income-tracker-${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(a.href);
+      };
+      document.getElementById('importBtn').onclick = ()=> document.getElementById('fileImport').click();
+      document.getElementById('fileImport').addEventListener('change', async (e)=>{
+        const file = e.target.files[0]; if(!file) return;
+        const text = await file.text();
+        try{
+          const data = JSON.parse(text);
+          ordersEl.innerHTML='';
+          (data.orders||[]).forEach(addOrder);
+          if(data.catalog){ Object.assign(CATALOG, data.catalog); buildCatalog(); }
+          save();
+          filterByWeek(currentWeekStart);
+        } catch(err){ alert('Invalid JSON file'); }
+        e.target.value='';
+      });
+
+      // Init
+      buildCatalog(); load(); filterByWeek(currentWeekStart);
+      let t; document.addEventListener('input', ()=>{ clearTimeout(t); t=setTimeout(()=>{ save(); recalcTotals(); },300); }, true);
+    } catch (err){
+      console.error(err);
+      const wrap = document.querySelector('.wrap');
+      if(wrap){
+        const warn = document.createElement('div');
+        warn.style.cssText = 'margin-top:12px;padding:10px;border:1px solid #ff6b6b;border-radius:10px;color:#ffdede;background:#2a1515';
+        warn.textContent = 'Runtime error prevented scripts from loading. Check console for details.';
+        wrap.prepend(warn);
+      }
+    }
+  });
+  </script>
+
+</body>
+</html>
