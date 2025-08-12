@@ -1,1 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ian Budget Dashboard — v2.2</title>
+  <link rel="icon" href="data:," />
+  <style>
+    :root{--bg:#0b0d10;--panel:#12151a;--panel-2:#171b22;--muted:#7a8599;--text:#e6ecf2;--accent:#6ee7ff;--accent-2:#a78bfa;--good:#34d399;--bad:#f87171;--card:#0f1318;--border:#1f2630}
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;background:radial-gradient(1200px 800px at 100% -20%,#111426,transparent 40%),linear-gradient(160deg,#0b0d10,#0c1016 40%,#0a0f14);color:var(--text);font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Inter,Helvetica,Arial}
+    .wrap{max-width:1100px;margin:0 auto;padding:24px}
+    header{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+    h1{font-size:22px;margin:0;font-weight:700;letter-spacing:.3px}
+    .pill{background:var(--panel);border:1px solid var(--border);border-radius:999px;padding:8px 12px;display:flex;align-items:center;gap:8px}
+    select, input, button, .buttonlike{background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:8px 10px}
+    select:focus,input:focus,button:focus,.buttonlike:focus{outline:2px solid var(--accent);outline-offset:2px}
+    button{cursor:pointer}
+    .row{display:flex;gap:12px;flex-wrap:wrap}
+    .spacer{flex:1}
+    .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:14px 0 22px}
+    @media (max-width:980px){.cards{grid-template-columns:repeat(2,1fr)}}
+    @media (max-width:560px){.cards{grid-template-columns:1fr}}
+    .card{background:linear-gradient(180deg,var(--panel-2),var(--card));border:1px solid var(--border);border-radius:16px;padding:14px;box-shadow:0 6px 24px rgba(0,0,0,.25)}
+    .card h3{font-size:12px;margin:0 0 6px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.7px}
+    .big{font-size:22px;font-weight:800;letter-spacing:.3px}
+    .sub{font-size:12px;color:var(--muted)}
+    .flex{display:flex;align-items:center;gap:10px}
+    .panel{background:linear-gradient(180deg,var(--panel-2),var(--card));border:1px solid var(--border);border-radius:16px;padding:14px;margin-bottom:18px}
+    table{width:100%;border-collapse:separate;border-spacing:0 8px}
+    th,td{text-align:left;padding:10px 10px}
+    th{font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)}
+    tbody tr{background:var(--panel);border:1px solid var(--border)}
+    tbody tr td:first-child{border-top-left-radius:12px;border-bottom-left-radius:12px}
+    tbody tr td:last-child{border-top-right-radius:12px;border-bottom-right-radius:12px}
+    tfoot td{color:var(--muted);font-weight:600}
+    .right{text-align:right}
+    .good{color:var(--good)}
+    .bad{color:var(--bad)}
+    .tag{font-size:11px;padding:4px 8px;border-radius:999px;background:#0d1420;border:1px solid #243045;color:#9fb4d0}
+    .toolbar{display:flex;gap:8px;flex-wrap:wrap}
+    .ghost{background:transparent;border-color:#2a3342}
+    .accent{background:linear-gradient(180deg,#142434,#0f1926);border-color:#27405b}
+    .small{font-size:12px;color:var(--muted)}
+    .input-row{display:grid;grid-template-columns:120px 1fr 1fr 140px 100px 40px;gap:8px}
+    .input-row.income{grid-template-columns:120px 1fr 140px 100px 40px}
+    @media (max-width:900px){
+      .input-row{grid-template-columns:1fr 1fr 1fr 1fr 80px 40px}
+      .input-row.income{grid-template-columns:1fr 1fr 1fr 80px 40px}
+    }
+    .muted{color:var(--muted)}
+    .footer{display:flex;justify-content:space-between;align-items:center;margin-top:14px}
+    .progress{height:8px;border-radius:999px;background:#0f1722;border:1px solid #1e293b;overflow:hidden}
+    .progress > div{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2));width:0}
+    .kbd{border:1px solid #2a3342;background:#0e1522;color:#a7b7d3;padding:2px 6px;border-radius:6px;font-size:12px}
+    .hint{color:#8aa0c0}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    @media (max-width:900px){.grid2{grid-template-columns:1fr}}
+    .notice{font-size:12px;color:#9fb4d0;margin-left:8px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="row">
+      <h1>Ian Budget</h1>
+      <div class="pill">
+        <span class="muted">Month</span>
+        <select id="monthSelect"></select>
+      </div>
+      <button id="addFixedBtn" class="accent">⧉ Add monthly fixed items</button>
+      <div class="spacer"></div>
+      <div class="toolbar">
+        <button id="exportBtn" class="ghost">Export JSON</button>
+        <button id="copyBtn" class="ghost" title="Copy data to clipboard">Copy JSON</button>
+        <button id="pasteBtn" class="ghost" title="Paste previously copied JSON">Paste JSON</button>
+        <label class="ghost buttonlike">
+          <input id="importFile" type="file" accept="application/json" style="display:none" />
+          Import JSON
+        </label>
+        <button id="resetBtn" class="ghost" title="Clear all data">Reset</button>
+      </div>
+    </header>
+    <div class="notice">If file import doesn’t work on iOS when opened from Files, use <b>Paste JSON</b> instead.</div>
 
+    <section class="cards">
+      <div class="card">
+        <h3>Income</h3>
+        <div class="big" id="incomeTotal">$0</div>
+        <div class="sub" id="incomeCount">0 entries</div>
+      </div>
+      <div class="card">
+        <h3>Expenses</h3>
+        <div class="big" id="expenseTotal">$0</div>
+        <div class="sub" id="expenseCount">0 entries</div>
+      </div>
+      <div class="card">
+        <h3>Net</h3>
+        <div class="big" id="netTotal">$0</div>
+        <div class="sub">Income − Expenses</div>
+      </div>
+      <div class="card">
+        <h3>Utilization</h3>
+        <div class="progress"><div id="utilBar"></div></div>
+        <div class="sub" id="utilText" style="margin-top:6px">0% of income spent</div>
+      </div>
+    </section>
+
+    <section class="grid2">
+      <div>
+        <div class="panel">
+          <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:8px">
+            <div class="flex"><span class="tag">Expenses</span><span class="small">Quick-add with <span class="kbd">Enter</span></span></div>
+            <div class="toolbar">
+              <select id="quickCat">
+                <option value="">Category…</option>
+                <option>Services</option>
+                <option>Food/House</option>
+                <option>Health/Fitness</option>
+                <option>Entertainment</option>
+                <option>Misc</option>
+                <option>Debt</option>
+              </select>
+              <button id="addExpenseBtn">+ Add</button>
+            </div>
+          </div>
+
+          <div class="input-row" style="margin-bottom:10px">
+            <input id="expDate" type="date"/>
+            <input id="expCategory" list="catList" placeholder="Category" />
+            <input id="expItem" placeholder="Item / Notes"/>
+            <input id="expAmount" inputmode="decimal" placeholder="$ Amount"/>
+            <select id="expPaidWith">
+              <option>Card</option><option>Cash</option><option>Transfer</option>
+            </select>
+            <button id="expEnter">↵</button>
+          </div>
+          <datalist id="catList">
+            <option>Services</option><option>Food/House</option><option>Health/Fitness</option><option>Entertainment</option><option>Misc</option><option>Debt</option>
+          </datalist>
+
+          <table>
+            <thead>
+              <tr><th>Date</th><th>Category</th><th>Item</th><th class="right">Amount</th><th>Paid With</th><th></th></tr>
+            </thead>
+            <tbody id="expenseBody"></tbody>
+            <tfoot>
+              <tr>
+                <td colspan="3">Monthly subtotal</td>
+                <td class="right" id="expenseSubtotal">$0</td>
+                <td colspan="2"></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <div>
+        <div class="panel">
+          <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:8px">
+            <div class="flex"><span class="tag">Income</span><span class="small">Quick-add with <span class="kbd">Enter</span></span></div>
+            <div class="toolbar">
+              <button id="addIncomeBtn">+ Add</button>
+            </div>
+          </div>
+
+          <div class="input-row income" style="margin-bottom:10px">
+            <input id="incDate" type="date"/>
+            <input id="incSource" placeholder="Source / Notes"/>
+            <input id="incAmount" inputmode="decimal" placeholder="$ Amount"/>
+            <select id="incMethod"><option>Deposit</option><option>Cash</option><option>Transfer</option></select>
+            <button id="incEnter">↵</button>
+          </div>
+
+          <table>
+            <thead>
+              <tr><th>Date</th><th>Source</th><th class="right">Amount</th><th>Method</th><th></th></tr>
+            </thead>
+            <tbody id="incomeBody"></tbody>
+            <tfoot>
+              <tr>
+                <td colspan="2">Monthly total</td>
+                <td class="right" id="incomeSubtotal">$0</td>
+                <td colspan="2"></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <div class="footer">
+      <div class="hint">Shortcuts: <span class="kbd">⌘/Ctrl+E</span> expense, <span class="kbd">⌘/Ctrl+I</span> income, <span class="kbd">⌘/Ctrl+S</span> export.</div>
+      <div class="small">Local, offline-first • Paste/Copy JSON fallback • <strong>v2.2</strong> • built 2025-08-11 20:10</div>
+    </div>
+  </div>
+
+  <script>
+    // Remove any old service worker + caches so new builds show immediately
+    if ('serviceWorker' in navigator) { (async () => { 
+      try { const regs = await navigator.serviceWorker.getRegistrations(); for (const r of regs) { await r.unregister(); } } catch {}
+      if (window.caches) { try { const keys = await caches.keys(); await Promise.all(keys.filter(k => k.startsWith('ian-budget')).map(k => caches.delete(k))); } catch {} } 
+    })(); }
+
+    const $ = sel => document.querySelector(sel);
+    const fmt = n => (isNaN(n)?"$0":n.toLocaleString(undefined,{style:'currency',currency:'USD'}));
+    const num = v => { if (v===undefined||v===null) return 0; return parseFloat(String(v).replace(/[^0-9.\-]/g,''))||0; };
+    const ym = (d=new Date()) => d.toISOString().slice(0,7);
+
+    const FIXED_ITEMS = [
+      {category:'Services', item:'Rent', amount:825},
+      {category:'Services', item:'Gas', amount:80},
+      {category:'Services', item:"Renter's Insurance", amount:80},
+      {category:'Services', item:'Internet', amount:70},
+      {category:'Services', item:'Phone', amount:80},
+      {category:'Services', item:'VPN', amount:20},
+      {category:'Services', item:'Apple Care', amount:30},
+      {category:'Food/House', item:'Groceries', amount:800},
+      {category:'Entertainment', item:'Apple Subscriptions', amount:40},
+      {category:'Entertainment', item:'Xbox Live', amount:25},
+      {category:'Entertainment', item:'Hobbies/Games', amount:80},
+      {category:'Misc', item:'Clothing/Shoes', amount:50},
+      {category:'Debt', item:'Credit Cards', amount:450},
+    ];
+
+    const blankMonth = ()=>({expenses:[], income:[]});
+    const load = ()=> JSON.parse(localStorage.getItem('ian-budget-v1')||'{}');
+    const save = ()=> localStorage.setItem('ian-budget-v1', JSON.stringify(state));
+
+    // Seed with July/August on first run
+    let state = load();
+    if(Object.keys(state).length===0){
+      state = { months:{} };
+      state.months['2025-07'] = blankMonth();
+      const jE = [
+        ['Services','Rent',825],['Services','Gas',80],["Services","Renter's Insurance",80],["Services","Internet",70],["Services","Phone",80],["Services","VPN",20],["Services","Apple Care",30],
+        ['Food/House','Groceries',800],['Food/House','Postmates/Eating Out',200],['Food/House','Cat Food/Litter',40],['Food/House','Supplies',60],
+        ['Health/Fitness','Sports Nutrition/Meds',60],
+        ['Entertainment','Apple Subscriptions',40],['Entertainment','Xbox Live',25],['Entertainment','Hobbies/Games',80],
+        ['Misc','Clothing/Shoes',50],
+        ['Debt','Credit Cards',450]
+      ];
+      jE.forEach(([category,item,amount])=> state.months['2025-07'].expenses.push({id:cid(),date:'2025-07-01',category,item,amount:+amount,paidWith:'Card'}));
+      state.months['2025-07'].income.push({id:cid(),date:'2025-07-22',source:'Income',amount:2000,method:'Deposit'});
+      state.months['2025-07'].income.push({id:cid(),date:'2025-07-28',source:'Income',amount:1200,method:'Deposit'});
+      state.months['2025-07'].income.push({id:cid(),date:'2025-07-31',source:'Income',amount:600,method:'Deposit'});
+
+      state.months['2025-08'] = blankMonth();
+      const aE = [
+        ['Services','Rent',825],['Services','Gas',80],["Services","Renter's Insurance",80],["Services","Internet",70],["Services","Phone",80],["Services","VPN",20],["Services","Apple Care",30],
+        ['Food/House','Groceries',800],['Health/Fitness','Running Gear',180],['Entertainment','Apple Subscriptions',30],['Entertainment','Xbox Live',25],['Debt','Credit Cards',450]
+      ];
+      aE.forEach(([category,item,amount])=> state.months['2025-08'].expenses.push({id:cid(),date:'2025-08-01',category,item,amount:+amount,paidWith:'Card'}));
+      save();
+    }
+
+    const monthSelect = $('#monthSelect');
+
+    function cid(){return Math.random().toString(36).slice(2)+Date.now().toString(36)}
+    function current(){return state.months[monthSelect.value]}
+
+    function listMonths(){
+      const cur = ym();
+      if(!state.months[cur]) state.months[cur]=blankMonth();
+      const all = Object.keys(state.months).concat(cur).filter((v,i,a)=>a.indexOf(v)===i).sort();
+      monthSelect.innerHTML = all.map(k=>`<option value="${k}">${fmtMonthLabel(k)}</option>`).join('');
+      monthSelect.value = cur;
+    }
+
+    function fmtMonthLabel(k){
+      const [y,m]=k.split('-');
+      const d = new Date(+y, +m-1, 1);
+      return d.toLocaleString(undefined,{month:'long', year:'numeric'});
+    }
+
+    function render(){
+      const m=current();
+      const eBody = $('#expenseBody');
+      eBody.innerHTML = m.expenses.map(row=>`
+        <tr data-id="${row.id}">
+          <td>${row.date||''}</td>
+          <td>${row.category||''}</td>
+          <td>${row.item||''}</td>
+          <td class="right">${fmt(num(row.amount))}</td>
+          <td>${row.paidWith||''}</td>
+          <td class="right"><button data-del="${row.id}" title="Delete" class="ghost">×</button></td>
+        </tr>`).join('');
+      const eTotal = m.expenses.reduce((a,b)=>a+num(b.amount),0);
+      $('#expenseSubtotal').textContent = fmt(eTotal);
+
+      const iBody = $('#incomeBody');
+      iBody.innerHTML = m.income.map(row=>`
+        <tr data-id="${row.id}">
+          <td>${row.date||''}</td>
+          <td>${row.source||''}</td>
+          <td class="right">${fmt(num(row.amount))}</td>
+          <td>${row.method||''}</td>
+          <td class="right"><button data-del="${row.id}" data-kind="inc" title="Delete" class="ghost">×</button></td>
+        </tr>`).join('');
+      const iTotal = m.income.reduce((a,b)=>a+num(b.amount),0);
+      $('#incomeSubtotal').textContent = fmt(iTotal);
+
+      $('#incomeTotal').textContent = fmt(iTotal);
+      $('#incomeCount').textContent = `${m.income.length} entr${m.income.length===1?'y':'ies'}`;
+      $('#expenseTotal').textContent = fmt(eTotal);
+      $('#expenseCount').textContent = `${m.expenses.length} entr${m.expenses.length===1?'y':'ies'}`;
+      const net = iTotal - eTotal;
+      $('#netTotal').textContent = (net>=0?'+':'') + fmt(Math.abs(net)).replace('$','$');
+      $('#netTotal').className = 'big ' + (net>=0? 'good':'bad');
+      const util = iTotal>0? Math.min(100, Math.round((eTotal/iTotal)*100)) : 0;
+      $('#utilBar').style.width = util+'%';
+      $('#utilText').textContent = `${util}% of income spent`;
+    }
+
+    function addExpense(){
+      const m=current();
+      const date = $('#expDate').value || new Date().toISOString().slice(0,10);
+      const category = $('#expCategory').value || $('#quickCat').value || '';
+      const item = $('#expItem').value || '';
+      const amount = num($('#expAmount').value);
+      const paidWith = $('#expPaidWith').value;
+      if(!amount){ $('#expAmount').focus(); return }
+      m.expenses.push({id:cid(), date, category, item, amount, paidWith});
+      save(); render();
+      $('#expItem').value=''; $('#expAmount').value=''; $('#expItem').focus();
+    }
+
+    function addIncome(){
+      const m=current();
+      const date = $('#incDate').value || new Date().toISOString().slice(0,10);
+      const source = $('#incSource').value || 'Income';
+      const amount = num($('#incAmount').value);
+      const method = $('#incMethod').value;
+      if(!amount){ $('#incAmount').focus(); return }
+      m.income.push({id:cid(), date, source, amount, method});
+      save(); render();
+      $('#incSource').value=''; $('#incAmount').value=''; $('#incSource').focus();
+    }
+
+    function removeById(id, kind){
+      const m=current();
+      if(kind==='inc') m.income = m.income.filter(r=>r.id!==id);
+      else m.expenses = m.expenses.filter(r=>r.id!==id);
+      save(); render();
+    }
+
+    function addFixed(){
+      const m=current();
+      const baseDate = new Date(monthSelect.value+'-01').toISOString().slice(0,10);
+      FIXED_ITEMS.forEach(f=> m.expenses.push({id:cid(), date:baseDate, category:f.category, item:f.item, amount:+f.amount, paidWith:'Card'}));
+      save(); render();
+    }
+
+    function exportJSON(){
+      const data = JSON.stringify(state,null,2);
+      try{
+        const blob = new Blob([data],{type:'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'ian-budget-data.json';
+        document.body.appendChild(a); a.click(); a.remove();
+        URL.revokeObjectURL(url);
+      }catch(err){ openJSONInNewTab(data); }
+    }
+
+    function importJSON(file){
+      const reader = new FileReader();
+      reader.onload = e => { try{
+        const data = JSON.parse(e.target.result);
+        if(!data || !data.months) throw new Error('Invalid file');
+        state = data; save(); listMonths(); render();
+      }catch(err){ alert('Import failed: '+err.message)} };
+      reader.readAsText(file);
+    }
+
+    function escapeHtml(s){return String(s).replace(/[&<>]/g, c=>({ '&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+    function openJSONInNewTab(data){
+      const w = window.open('about:blank','_blank');
+      if(w){
+        w.document.open();
+        w.document.write('<!doctype html><title>ian-budget-data.json</title><pre style="white-space:pre-wrap;word-wrap:break-word;padding:16px;background:#0b0d10;color:#e6ecf2;">'+escapeHtml(data)+'</pre>');
+        w.document.close();
+      } else {
+        alert('Popup blocked. Use Copy JSON instead.');
+      }
+    }
+
+    async function copyJSON(){
+      const data = JSON.stringify(state,null,2);
+      try{ await navigator.clipboard.writeText(data); alert('JSON copied to clipboard.'); }
+      catch(e){
+        const ta=document.createElement('textarea');
+        ta.value=data; document.body.appendChild(ta); ta.select();
+        document.execCommand('copy'); ta.remove();
+        alert('JSON copied to clipboard.');
+      }
+    }
+
+    function pasteJSON(){
+      const txt = prompt('Paste JSON here:');
+      if(!txt) return;
+      try{
+        const data = JSON.parse(txt);
+        if(!data || !data.months) throw new Error('Invalid JSON');
+        state = data; save(); listMonths(); render();
+      }catch(err){ alert('Import failed: '+err.message); }
+    }
+
+    // Event wiring
+    listMonths();
+    render();
+    monthSelect.addEventListener('change', ()=>{ if(!state.months[monthSelect.value]) state.months[monthSelect.value]=blankMonth(); save(); render(); });
+    $('#expEnter').addEventListener('click', addExpense);
+    $('#incEnter').addEventListener('click', addIncome);
+    $('#addExpenseBtn').addEventListener('click', addExpense);
+    $('#addIncomeBtn').addEventListener('click', addIncome);
+    $('#addFixedBtn').addEventListener('click', addFixed);
+    $('#exportBtn').addEventListener('click', exportJSON);
+    $('#copyBtn').addEventListener('click', copyJSON);
+    $('#pasteBtn').addEventListener('click', pasteJSON);
+    $('#importFile').addEventListener('change', e=> e.target.files[0] && importJSON(e.target.files[0]));
+    $('#resetBtn').addEventListener('click', ()=>{ if(confirm('Erase all saved data on this device?')){ localStorage.removeItem('ian-budget-v1'); location.reload(); } });
+
+    $('#quickCat').addEventListener('change', ()=> $('#expCategory').value=$('#quickCat').value);
+
+    $('#expenseBody').addEventListener('click', e=>{
+      const id = e.target.getAttribute('data-del');
+      if(id) removeById(id,'exp');
+    });
+    $('#incomeBody').addEventListener('click', e=>{
+      const id = e.target.getAttribute('data-del');
+      if(id) removeById(id,'inc');
+    });
+
+    // Shortcuts (safe): only when not typing
+    document.addEventListener('keydown', e=>{
+      if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='s'){ e.preventDefault(); exportJSON(); return; }
+      const a = document.activeElement;
+      const typing = !!a && (['INPUT','TEXTAREA','SELECT'].includes(a.tagName) || a.isContentEditable);
+      if(!typing){
+        if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='e'){ e.preventDefault(); $('#expItem').focus(); return; }
+        if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='i'){ e.preventDefault(); $('#incSource').focus(); return; }
+      }
+      if(e.key==='Enter' && a && ['expDate','expCategory','expItem','expAmount','expPaidWith','quickCat'].includes(a.id)){ e.preventDefault(); addExpense(); return; }
+      if(e.key==='Enter' && a && ['incDate','incSource','incAmount','incMethod'].includes(a.id)){ e.preventDefault(); addIncome(); return; }
+    });
+  </script>
+</body>
+</html>
