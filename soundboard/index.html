@@ -16,20 +16,20 @@
     body {
         font-family: 'Courier New', monospace;
         background: 
-            linear-gradient(135deg, #f5f0e8 0%, #e8dcc6 25%, #d4c5a9 50%, #c7b8a1 75%, #b8a082 100%),
+            linear-gradient(135deg, #e8dcc0 0%, #dccfb8 25%, #c8bb9e 50%, #baa993 75%, #a89682 100%),
             repeating-linear-gradient(
                 0deg,
                 transparent,
                 transparent 2px,
-                rgba(139, 125, 107, 0.03) 2px,
-                rgba(139, 125, 107, 0.03) 4px
+                rgba(120, 108, 92, 0.03) 2px,
+                rgba(120, 108, 92, 0.03) 4px
             ),
             repeating-linear-gradient(
                 90deg,
                 transparent,
                 transparent 2px,
-                rgba(139, 125, 107, 0.03) 2px,
-                rgba(139, 125, 107, 0.03) 4px
+                rgba(120, 108, 92, 0.03) 2px,
+                rgba(120, 108, 92, 0.03) 4px
             );
         color: #8b7d6b;
         min-height: 100vh;
@@ -46,9 +46,9 @@
         width: 100%;
         height: 100%;
         background: 
-            radial-gradient(circle at 20% 20%, rgba(200, 180, 150, 0.1) 0%, transparent 50%),
-            radial-gradient(circle at 80% 60%, rgba(180, 160, 130, 0.08) 0%, transparent 50%),
-            radial-gradient(circle at 40% 80%, rgba(160, 140, 110, 0.06) 0%, transparent 50%);
+            radial-gradient(circle at 20% 20%, rgba(180, 165, 140, 0.08) 0%, transparent 50%),
+            radial-gradient(circle at 80% 60%, rgba(160, 145, 120, 0.06) 0%, transparent 50%),
+            radial-gradient(circle at 40% 80%, rgba(140, 125, 100, 0.04) 0%, transparent 50%);
         pointer-events: none;
         z-index: 1;
     }
@@ -74,12 +74,12 @@
         font-size: clamp(1.5rem, 4vw, 2.5rem);
         color: #ff6b35;
         text-shadow: 
-            0 0 20px #ff6b35, 
-            0 0 40px #ff6b35,
-            2px 2px 0px rgba(255, 255, 255, 0.3),
-            1px 2px 4px rgba(0, 0, 0, 0.4);
+            -1px -1px 0px #000000,
+            1px -1px 0px #000000,
+            -1px 1px 0px #000000,
+            1px 1px 0px #000000,
+            0px 2px 4px rgba(0, 0, 0, 0.3);
         animation: pulse 3s ease-in-out infinite;
-        filter: drop-shadow(0px -1px 0px rgba(0, 0, 0, 0.3));
     }
 
     .title p {
@@ -326,7 +326,7 @@
 <body>
     <div class="container">
         <div class="title">
-            <h1>2001: A Sound Odyssey</h1>
+            <h1>VOX-2001</h1>
             <p>Calming Frequencies for Deep Space Meditation</p>
         </div>
 
