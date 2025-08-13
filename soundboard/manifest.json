@@ -1,0 +1,16 @@
+{
+  "name": "VOX-2001",
+  "short_name": "VOX-2001",
+  "description": "Calming Frequencies for Deep Space Meditation",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#8b7d6b",
+  "theme_color": "#ff6b35",
+  "icons": [
+    {
+      "src": "vox-2001-icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
